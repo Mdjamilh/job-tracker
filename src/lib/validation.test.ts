@@ -4,7 +4,11 @@ import { applicationInputSchema, fieldErrors, logInSchema, signUpSchema } from "
 
 describe("sign-up validation", () => {
   it("normalizes the email", () => {
-    const parsed = signUpSchema.parse({ name: " Sam ", email: "  Sam@Example.COM ", password: "long enough pw" });
+    const parsed = signUpSchema.parse({
+      name: " Sam ",
+      email: "  Sam@Example.COM ",
+      password: "long enough pw",
+    });
     expect(parsed).toEqual({ name: "Sam", email: "sam@example.com", password: "long enough pw" });
   });
 

@@ -29,7 +29,11 @@ const app = (overrides: Partial<Application>): Application => ({
 describe("reminderFor", () => {
   it("flags an application with no response after 10 days", () => {
     expect(reminderFor(app({}), "2026-10-10")).toBeNull();
-    expect(reminderFor(app({}), "2026-10-11")).toMatchObject({ kind: "stale", days: 10, message: "No response in 10 days" });
+    expect(reminderFor(app({}), "2026-10-11")).toMatchObject({
+      kind: "stale",
+      days: 10,
+      message: "No response in 10 days",
+    });
   });
 
   it("also nudges stalled interviews, but not wishlist items or offers", () => {
@@ -41,7 +45,10 @@ describe("reminderFor", () => {
   it("uses an explicit follow-up date over the 10-day rule", () => {
     const snoozed = app({ followUpOn: "2026-10-25" });
     expect(reminderFor(snoozed, "2026-10-20")).toBeNull();
-    expect(reminderFor(snoozed, "2026-10-25")).toMatchObject({ kind: "follow-up", message: "Follow-up due today" });
+    expect(reminderFor(snoozed, "2026-10-25")).toMatchObject({
+      kind: "follow-up",
+      message: "Follow-up due today",
+    });
     expect(reminderFor(snoozed, "2026-10-26")?.message).toBe("Follow-up was due 1 day ago");
     // A wishlist item can carry an "apply by" follow-up too.
     expect(reminderFor(app({ status: "wishlist", followUpOn: "2026-10-01" }), "2026-10-03")?.days).toBe(2);
@@ -66,9 +73,24 @@ describe("listReminders", () => {
 
   it("lists the most overdue first and resets after a status change", async () => {
     const me = await makeUser(db);
-    const older = await createApplication(db, me.id, input({ company: "Older", status: "applied" }), new Date("2026-10-01"));
-    await createApplication(db, me.id, input({ company: "Newer", status: "applied" }), new Date("2026-10-05"));
-    await createApplication(db, me.id, input({ company: "Fresh", status: "applied" }), new Date("2026-10-20"));
+    const older = await createApplication(
+      db,
+      me.id,
+      input({ company: "Older", status: "applied" }),
+      new Date("2026-10-01"),
+    );
+    await createApplication(
+      db,
+      me.id,
+      input({ company: "Newer", status: "applied" }),
+      new Date("2026-10-05"),
+    );
+    await createApplication(
+      db,
+      me.id,
+      input({ company: "Fresh", status: "applied" }),
+      new Date("2026-10-20"),
+    );
 
     const now = new Date("2026-10-23T12:00:00Z");
     expect((await listReminders(db, me.id, now)).map((r) => [r.application.company, r.days])).toEqual([

@@ -41,7 +41,12 @@ beforeEach(async () => {
   await db.delete(users);
   alice = await makeUser(db, "Alice");
   bob = await makeUser(db, "Bob");
-  await createApplication(db, alice.id, input({ company: "Alice Co", status: "applied" }), new Date("2026-09-01"));
+  await createApplication(
+    db,
+    alice.id,
+    input({ company: "Alice Co", status: "applied" }),
+    new Date("2026-09-01"),
+  );
   bobsApp = await createApplication(
     db,
     bob.id,
@@ -52,7 +57,12 @@ beforeEach(async () => {
 
 async function bobsRowUnchanged() {
   const row = await getApplication(db, bob.id, bobsApp.id);
-  expect(row).toMatchObject({ company: "Bob Secret Corp", status: "applied", notes: "bob's private notes", followUpOn: null });
+  expect(row).toMatchObject({
+    company: "Bob Secret Corp",
+    status: "applied",
+    notes: "bob's private notes",
+    followUpOn: null,
+  });
   expect(row.events).toHaveLength(1);
 }
 
@@ -65,7 +75,9 @@ describe("user A cannot read user B's data", () => {
   it("lists, searches and filters only return the caller's rows", async () => {
     expect((await listApplications(db, alice.id)).map((a) => a.company)).toEqual(["Alice Co"]);
     expect(await listApplications(db, alice.id, { q: "Secret" })).toEqual([]);
-    expect((await listApplications(db, alice.id, { status: "applied" })).map((a) => a.userId)).toEqual([alice.id]);
+    expect((await listApplications(db, alice.id, { status: "applied" })).map((a) => a.userId)).toEqual([
+      alice.id,
+    ]);
   });
 
   it("CSV export contains only the caller's applications", async () => {

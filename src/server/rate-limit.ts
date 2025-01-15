@@ -22,7 +22,9 @@ export class RateLimiter {
       return { ok: true, retryAfterMs: 0 };
     }
     entry.count += 1;
-    return entry.count <= this.limit ? { ok: true, retryAfterMs: 0 } : { ok: false, retryAfterMs: entry.resetAt - now };
+    return entry.count <= this.limit
+      ? { ok: true, retryAfterMs: 0 }
+      : { ok: false, retryAfterMs: entry.resetAt - now };
   }
 
   reset(key: string) {

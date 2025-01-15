@@ -31,7 +31,10 @@ export function reminderFor(application: Application, today: string): Reminder |
       application,
       kind: "follow-up",
       days: overdue,
-      message: overdue === 0 ? "Follow-up due today" : `Follow-up was due ${overdue} day${overdue === 1 ? "" : "s"} ago`,
+      message:
+        overdue === 0
+          ? "Follow-up due today"
+          : `Follow-up was due ${overdue} day${overdue === 1 ? "" : "s"} ago`,
     };
   }
 

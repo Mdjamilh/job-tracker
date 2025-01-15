@@ -36,7 +36,12 @@ describe("creating applications", () => {
     const app = await createApplication(
       db,
       me.id,
-      input({ company: "Globex", salaryMin: "100000", salaryMax: "130000", link: "https://globex.example/jobs/7" }),
+      input({
+        company: "Globex",
+        salaryMin: "100000",
+        salaryMax: "130000",
+        link: "https://globex.example/jobs/7",
+      }),
       day(1),
     );
     const full = await getApplication(db, me.id, app.id);
@@ -47,7 +52,12 @@ describe("creating applications", () => {
   it("stamps the applied date when created past the wishlist", async () => {
     const app = await createApplication(db, me.id, input({ status: "applied" }), day(5));
     expect(app.appliedOn).toBe("2026-10-05");
-    const kept = await createApplication(db, me.id, input({ status: "applied", appliedOn: "2026-09-30" }), day(5));
+    const kept = await createApplication(
+      db,
+      me.id,
+      input({ status: "applied", appliedOn: "2026-09-30" }),
+      day(5),
+    );
     expect(kept.appliedOn).toBe("2026-09-30");
   });
 
@@ -95,14 +105,25 @@ describe("moving between stages", () => {
     await expect(updateApplication(db, me.id, app.id, input({ status: "wishlist" }))).rejects.toMatchObject({
       code: "INVALID_TRANSITION",
     });
-    const edited = await updateApplication(db, me.id, app.id, input({ status: "offer", notes: "Negotiating" }));
+    const edited = await updateApplication(
+      db,
+      me.id,
+      app.id,
+      input({ status: "offer", notes: "Negotiating" }),
+    );
     expect(edited.notes).toBe("Negotiating");
     expect((await getApplication(db, me.id, app.id)).events).toHaveLength(1);
   });
 
   it("logs a status change made through the edit form", async () => {
     const app = await createApplication(db, me.id, input(), day(1));
-    const edited = await updateApplication(db, me.id, app.id, input({ status: "applied", role: "Staff Eng" }), day(3));
+    const edited = await updateApplication(
+      db,
+      me.id,
+      app.id,
+      input({ status: "applied", role: "Staff Eng" }),
+      day(3),
+    );
     expect(edited).toMatchObject({ status: "applied", role: "Staff Eng", appliedOn: "2026-10-03" });
     expect((await getApplication(db, me.id, app.id)).events.map(describeEvent)).toEqual([
       "Added as Wishlist",
@@ -113,9 +134,24 @@ describe("moving between stages", () => {
 
 describe("listing", () => {
   beforeEach(async () => {
-    await createApplication(db, me.id, input({ company: "Initech", role: "Backend Engineer", salaryMax: "150000" }), day(1));
-    await createApplication(db, me.id, input({ company: "Acme", role: "Frontend Engineer", status: "applied" }), day(2));
-    await createApplication(db, me.id, input({ company: "Hooli", role: "Data Analyst", salaryMax: "90000" }), day(3));
+    await createApplication(
+      db,
+      me.id,
+      input({ company: "Initech", role: "Backend Engineer", salaryMax: "150000" }),
+      day(1),
+    );
+    await createApplication(
+      db,
+      me.id,
+      input({ company: "Acme", role: "Frontend Engineer", status: "applied" }),
+      day(2),
+    );
+    await createApplication(
+      db,
+      me.id,
+      input({ company: "Hooli", role: "Data Analyst", salaryMax: "90000" }),
+      day(3),
+    );
   });
 
   it("defaults to most recently updated first", async () => {
@@ -131,7 +167,9 @@ describe("listing", () => {
   });
 
   it("filters by status and by a case-insensitive search on company or role", async () => {
-    expect((await listApplications(db, me.id, { status: "applied" })).map((a) => a.company)).toEqual(["Acme"]);
+    expect((await listApplications(db, me.id, { status: "applied" })).map((a) => a.company)).toEqual([
+      "Acme",
+    ]);
     expect((await listApplications(db, me.id, { q: "ENGINEER" })).map((a) => a.company).sort()).toEqual([
       "Acme",
       "Initech",

@@ -1,4 +1,5 @@
-export type DomainErrorCode = "NOT_FOUND" | "INVALID_TRANSITION" | "EMAIL_TAKEN" | "INVALID_CREDENTIALS" | "RATE_LIMITED";
+export type DomainErrorCode =
+  "NOT_FOUND" | "INVALID_TRANSITION" | "EMAIL_TAKEN" | "INVALID_CREDENTIALS" | "RATE_LIMITED";
 
 /** An expected failure whose message is safe to show to the user. */
 export class DomainError extends Error {

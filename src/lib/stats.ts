@@ -4,7 +4,11 @@ import type { Status } from "./status";
 export type WeekBucket = { weekStart: string; count: number };
 
 /** Applications submitted per ISO week (Monday start), oldest first, zero-filled. */
-export function weeklyCounts(appliedDates: readonly (string | null)[], today: string, weeks = 8): WeekBucket[] {
+export function weeklyCounts(
+  appliedDates: readonly (string | null)[],
+  today: string,
+  weeks = 8,
+): WeekBucket[] {
   const current = startOfWeek(today);
   const buckets: WeekBucket[] = [];
   for (let i = weeks - 1; i >= 0; i--) buckets.push({ weekStart: addDays(current, -7 * i), count: 0 });
@@ -17,7 +21,12 @@ export function weeklyCounts(appliedDates: readonly (string | null)[], today: st
   return buckets;
 }
 
-export type FunnelStep = { stage: "tracked" | "applied" | "interview" | "offer"; label: string; count: number; rate: number | null };
+export type FunnelStep = {
+  stage: "tracked" | "applied" | "interview" | "offer";
+  label: string;
+  count: number;
+  rate: number | null;
+};
 
 /**
  * Funnel from each application's full history, not just its current status:
