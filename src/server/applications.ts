@@ -160,13 +160,13 @@ export async function updateApplication(
   return db.transaction(async (tx) => {
     const current = await findOwned(tx, userId, id);
     const { status, ...fields } = input;
-    const statusChanges = status === current.status ? {} : await applyMove(tx, userId, current, status, now);
+    const moved = status === current.status ? null : await applyMove(tx, userId, current, status, now);
     const [row] = await tx
       .update(applications)
       .set({
         ...fields,
-        ...statusChanges,
-        appliedOn: fields.appliedOn ?? ("appliedOn" in statusChanges ? statusChanges.appliedOn : null),
+        ...moved,
+        appliedOn: fields.appliedOn ?? moved?.appliedOn ?? null,
         updatedAt: now,
       })
       .where(ownedBy(userId, id))
