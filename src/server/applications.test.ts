@@ -162,8 +162,10 @@ describe("listing", () => {
     const asc = await listApplications(db, me.id, { sort: "company" });
     expect(asc.map((a) => a.company)).toEqual(["Acme", "Hooli", "Initech"]);
     const bySalary = await listApplications(db, me.id, { sort: "salaryMax", dir: "desc" });
-    expect(bySalary[0].company).toBe("Acme"); // NULLs sort first in descending order in Postgres
-    expect(bySalary.slice(1).map((a) => a.company)).toEqual(["Initech", "Hooli"]);
+    // Acme has no salary listed: it goes last in both directions.
+    expect(bySalary.map((a) => a.company)).toEqual(["Initech", "Hooli", "Acme"]);
+    const bySalaryAsc = await listApplications(db, me.id, { sort: "salaryMax", dir: "asc" });
+    expect(bySalaryAsc.map((a) => a.company)).toEqual(["Hooli", "Initech", "Acme"]);
   });
 
   it("filters by status and by a case-insensitive search on company or role", async () => {

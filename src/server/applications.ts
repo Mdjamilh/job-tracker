@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, ilike, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, ilike, or, sql, type SQL } from "drizzle-orm";
 
 import { applications, statusEvents, type Application, type StatusEvent } from "@/db/schema";
 import type { Database, Executor } from "@/db/types";
@@ -57,12 +57,14 @@ export async function listApplications(
     conditions.push(or(ilike(applications.company, pattern), ilike(applications.role, pattern))!);
   }
   const column = SORT_COLUMNS[filters.sort ?? "updatedAt"];
-  const direction = (filters.dir ?? (filters.sort ? "asc" : "desc")) === "asc" ? asc : desc;
+  const direction = (filters.dir ?? (filters.sort ? "asc" : "desc")) === "asc" ? sql`asc` : sql`desc`;
   return db
     .select()
     .from(applications)
     .where(and(...conditions))
-    .orderBy(direction(column), asc(applications.id));
+    // Empty values (no salary, not applied yet) always sink to the bottom,
+    // instead of Postgres's default of putting NULLs first when descending.
+    .orderBy(sql`${column} ${direction} nulls last`, asc(applications.id));
 }
 
 async function findOwned(db: Executor, userId: string, id: string): Promise<Application> {
