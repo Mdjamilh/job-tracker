@@ -13,7 +13,10 @@ const LINKS = [
 export function NavLinks({ reminderCount }: { reminderCount: number }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="flex items-center gap-1 text-sm">
+    <nav
+      aria-label="Main"
+      className="order-last flex w-full items-center gap-1 overflow-x-auto text-sm sm:order-none sm:w-auto"
+    >
       {LINKS.map((link) => {
         const active =
           pathname === link.href || (link.href === "/applications" && pathname.startsWith("/applications/"));
