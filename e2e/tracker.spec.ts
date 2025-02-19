@@ -70,6 +70,27 @@ test("sign up, add, move on the board, see the timeline and export CSV", async (
   expect(csv.split("\r\n").filter(Boolean)).toHaveLength(2);
 });
 
+test("editing validates on the server and keeps what was typed", async ({ page }) => {
+  await signUp(page);
+  await addApplication(page, "Edit Me Co", "Engineer");
+  await page.getByRole("link", { name: "Edit" }).click();
+
+  await page.getByLabel("Minimum").fill("150000");
+  await page.getByLabel("Maximum").fill("100000");
+  await page.getByLabel("Job posting link").fill("javascript:alert(1)");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("Maximum salary must be at least the minimum.")).toBeVisible();
+  await expect(page.getByText(/Enter a full http\(s\) link/)).toBeVisible();
+  await expect(page.getByLabel("Minimum")).toHaveValue("150000");
+
+  await page.getByLabel("Maximum").fill("170000");
+  await page.getByLabel("Job posting link").fill("https://example.com/jobs/1");
+  await page.getByLabel("Status").selectOption("applied");
+  await page.getByRole("button", { name: "Save changes" }).click();
+  await expect(page.getByText("$150,000 - $170,000")).toBeVisible();
+  await expect(page.getByTestId("timeline")).toContainText("Wishlist to Applied");
+});
+
 test("the board refuses a move the rules don't allow", async ({ page }) => {
   await signUp(page);
   await addApplication(page, "Backwards Ltd", "Engineer");
