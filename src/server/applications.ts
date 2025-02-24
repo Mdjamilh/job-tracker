@@ -58,13 +58,15 @@ export async function listApplications(
   }
   const column = SORT_COLUMNS[filters.sort ?? "updatedAt"];
   const direction = (filters.dir ?? (filters.sort ? "asc" : "desc")) === "asc" ? sql`asc` : sql`desc`;
-  return db
-    .select()
-    .from(applications)
-    .where(and(...conditions))
-    // Empty values (no salary, not applied yet) always sink to the bottom,
-    // instead of Postgres's default of putting NULLs first when descending.
-    .orderBy(sql`${column} ${direction} nulls last`, asc(applications.id));
+  return (
+    db
+      .select()
+      .from(applications)
+      .where(and(...conditions))
+      // Empty values (no salary, not applied yet) always sink to the bottom,
+      // instead of Postgres's default of putting NULLs first when descending.
+      .orderBy(sql`${column} ${direction} nulls last`, asc(applications.id))
+  );
 }
 
 async function findOwned(db: Executor, userId: string, id: string): Promise<Application> {
@@ -98,12 +100,15 @@ export async function createApplication(
   userId: string,
   input: ApplicationInput,
   now = new Date(),
+  /** Only the demo seed passes this, so every instance seeds identical ids. */
+  id?: string,
 ): Promise<Application> {
   return db.transaction(async (tx) => {
     const [row] = await tx
       .insert(applications)
       .values({
         ...input,
+        id,
         userId,
         appliedOn: appliedOnFor(input.status, input.appliedOn, now),
         statusChangedAt: now,

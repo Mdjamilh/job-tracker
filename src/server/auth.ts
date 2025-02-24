@@ -37,13 +37,13 @@ function toPublic(user: User): PublicUser {
 /** Expects already-validated input (see signUpSchema): email is lowercased. */
 export async function registerUser(
   db: Database,
-  input: { email: string; name: string; password: string },
+  input: { email: string; name: string; password: string; id?: string },
 ): Promise<PublicUser> {
   const passwordHash = await hashPassword(input.password);
   try {
     const [user] = await db
       .insert(users)
-      .values({ email: input.email, name: input.name, passwordHash })
+      .values({ id: input.id, email: input.email, name: input.name, passwordHash })
       .returning();
     return toPublic(user);
   } catch (error) {

@@ -7,7 +7,7 @@ import { listReminders } from "@/server/reminders";
 import { getStats } from "@/server/stats";
 import { createTestDb } from "@/test/db";
 
-import { DEMO_ACCOUNT, seedDemo } from "./seed";
+import { DEMO_ACCOUNT, DEMO_USER_ID, seedDemo } from "./seed";
 
 let db: Database;
 let close: () => Promise<void>;
@@ -22,6 +22,7 @@ describe("demo seed", () => {
     const now = new Date("2026-10-23T12:00:00Z");
     await seedDemo(db, now);
     const user = await authenticate(db, DEMO_ACCOUNT.email, DEMO_ACCOUNT.password);
+    expect(user.id).toBe(DEMO_USER_ID);
 
     const apps = await listApplications(db, user.id);
     expect(apps.length).toBeGreaterThanOrEqual(12);
@@ -34,6 +35,9 @@ describe("demo seed", () => {
   it("is idempotent", async () => {
     await seedDemo(db);
     const user = await authenticate(db, DEMO_ACCOUNT.email, DEMO_ACCOUNT.password);
-    expect(await listApplications(db, user.id)).toHaveLength(16);
+    const apps = await listApplications(db, user.id, { sort: "company" });
+    expect(apps).toHaveLength(16);
+    // Same ids on every instance, so a link copied from one still opens on another.
+    expect(apps.every((a) => a.id.startsWith("5eed0000-"))).toBe(true);
   });
 });

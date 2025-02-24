@@ -10,6 +10,14 @@ import { users } from "./schema";
 import type { Database } from "./types";
 
 /** Shown on the log-in page in demo mode. Not a secret: the data is throwaway. */
+/**
+ * Fixed ids: in demo mode each serverless instance seeds its own in-memory
+ * database, and identical ids let a session or a link made on one instance
+ * work on another.
+ */
+export const DEMO_USER_ID = "5eed0000-0000-4000-8000-000000000000";
+const demoAppId = (i: number) => `5eed0000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`;
+
 export const DEMO_ACCOUNT = {
   email: "demo@jobtracker.dev",
   password: "jobhunt-demo-2026",
@@ -137,10 +145,10 @@ export async function seedDemo(db: Database, now = new Date()): Promise<void> {
   const existing = await db.query.users.findFirst({ where: eq(users.email, DEMO_ACCOUNT.email) });
   if (existing) return;
 
-  const user = await registerUser(db, DEMO_ACCOUNT);
+  const user = await registerUser(db, { ...DEMO_ACCOUNT, id: DEMO_USER_ID });
   const ago = (days: number) => new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
-  for (const seed of APPS) {
+  for (const [index, seed] of APPS.entries()) {
     const [[addedDaysAgo, firstStatus], ...moves] = seed.history;
     const created = await createApplication(
       db,
@@ -155,6 +163,7 @@ export async function seedDemo(db: Database, now = new Date()): Promise<void> {
         notes: seed.notes,
       }),
       ago(addedDaysAgo),
+      demoAppId(index),
     );
     for (const [daysAgo, status] of moves)
       await moveApplication(db, user.id, created.id, status, ago(daysAgo));
