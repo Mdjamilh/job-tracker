@@ -65,7 +65,9 @@ I wrote a small session system instead of pulling in Auth.js. It is about 100 li
 - Sessions last 30 days and slide: using the app in the second half of that window extends it. The database row is the source of truth for expiry. Log-out deletes the row, so the old cookie stops working at once.
 - CSRF: Server Actions only accept POSTs whose `Origin` matches the host (built into Next.js), and the cookie isn't sent on cross-site POSTs anyway.
 
-Because sessions are database rows, there is no signing secret to manage, and the Vercel project needs no environment variables.
+With a real database there is no signing secret to manage, because sessions are database rows.
+
+**Demo mode is different, on purpose.** Without a database, every Vercel serverless instance has its own in-memory copy of Postgres. A session row written by one instance doesn't exist on the next, and the first version of this app logged demo visitors out after one click. In demo mode the cookie is instead a signed token, `d.<userId>.<expiry>.<HMAC-SHA256>`, which any instance can check with the shared `AUTH_SECRET` ([`src/server/demo-session.ts`](src/server/demo-session.ts)). The demo account is seeded with the same fixed ids on every instance, so its token and its links work everywhere. The trade-off is that a demo token can't be revoked on the server: log-out clears the cookie, but a copied token stays valid until it expires. That is fine for throwaway demo data. When `DATABASE_URL` is set, these tokens are refused outright and only database sessions count.
 
 ### Per-user authorization
 
@@ -126,7 +128,7 @@ e2e/               Playwright tests
 | Suite | What it covers | Count |
 | --- | --- | --- |
 | Vitest, `src/lib` | status rules, validation, dates, CSV escaping, stats math, formatting | 27 |
-| Vitest, `src/server` + `src/db` | auth and sessions, application queries, timeline, reminders, demo seed, and the cross-user authorization suite | 42 |
+| Vitest, `src/server` + `src/db` | auth and sessions, signed demo tokens, application queries, timeline, reminders, demo seed, and the cross-user authorization suite | 47 |
 | Playwright, `e2e/` | sign up, add, move (menu and drag and drop), timeline, CSV export, edit validation, refused moves, cross-user 404, demo log-in, log-out | 7 |
 
 The database tests run twice in CI: once on in-memory PGlite and once on a real **Postgres 17** service container. On Postgres each test file creates and drops its own database, so files can run in parallel.
@@ -167,12 +169,13 @@ Environment variables (all optional):
 | Variable | Effect |
 | --- | --- |
 | `DATABASE_URL` | Postgres connection string. Without it the app uses PGlite and runs in demo mode. |
+| `AUTH_SECRET` | Demo mode only: the key (32+ characters) that signs demo session tokens. Needed when the demo runs on more than one instance, as on Vercel. Locally a random key is made per process. |
 | `BCRYPT_COST` | bcrypt work factor, default 12. The tests set it to 4 to run faster. |
 | `PGLITE_IN_MEMORY=1` | Keep PGlite in memory instead of `.pglite/`. |
 
 ## Limitations
 
-- **The live demo can lose your changes.** It has no database, so every Vercel serverless instance boots its own in-memory Postgres with a fresh copy of the demo data. Two requests can land on different instances. An application you just added may then be missing, and a session created on one instance isn't known to another, so you can get logged out. Instances also shut down when idle, which resets everything. Setting `DATABASE_URL` to a hosted Postgres (Neon, Supabase and so on) fixes all of this, with no code changes.
+- **The live demo can lose your changes.** It has no database, so every Vercel serverless instance boots its own in-memory Postgres with a fresh copy of the demo data. Two requests can land on different instances. The demo account stays logged in everywhere (see [Sessions](#sessions)), but an application you just added or moved may be missing on the next page if that page came from another instance. An account you sign up for exists only on the instance that created it, so you may get sent back to the log-in page. Instances also shut down when idle, which resets everything. Setting `DATABASE_URL` to a hosted Postgres (Neon, Supabase and so on) fixes all of this, with no code changes.
 - The first request after a cold start takes a few seconds while PGlite boots and seeds the demo.
 - The log-in throttle is kept in memory, per instance. A multi-instance deployment should move it to Redis or a table.
 - Dates are calendar days in UTC. Around midnight, "today" can differ from your local date by one.
